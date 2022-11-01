@@ -1,0 +1,1 @@
+const websocketUrl = String.fromEnvironment('urlSocket');
