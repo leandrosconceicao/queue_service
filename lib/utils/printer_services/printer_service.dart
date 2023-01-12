@@ -1,20 +1,22 @@
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
-import 'package:queue_service/tools/date_functions.dart';
 
 import '../../models/queue.dart';
 
 class PrinterService {
   static Future<void> printQueue(Queue data, Function callbackIfError) async {
     try {
-      final gen = Generator(PaperSize.mm58, await CapabilityProfile.load());
+      final gen = Generator(PaperSize.mm80, await CapabilityProfile.load());
       List<int> bytes = [];
-      bytes += gen.row(
-          [PosColumn(width: 12, text: FormatDate.standard(data.date ?? ''))]);
-      _emptyLine(bytes, 2, gen);
-      _genText(gen, '${data.position ?? 0}', bytes);
-      _emptyLine(bytes, 2, gen);
-      bytes += gen.feed(1);
+      bytes += gen.text('${data.date}', styles: _style());
+      bytes += gen.emptyLines(1);
+      bytes += gen.text('${data.position}', styles: _style());
+      
+      bytes += gen.cut();
+      
+      bytes += gen.text('${data.date}', styles: _style());
+      bytes += gen.emptyLines(1);
+      bytes += gen.text('${data.position}', styles: _style());
       bytes += gen.cut();
       await PrintBluetoothThermal.writeBytes(bytes);
     } catch (e) {
@@ -22,18 +24,12 @@ class PrinterService {
     }
   }
 
-  static void _emptyLine(List<int> bytes, int lines, Generator gen) async {
-    bytes += gen.emptyLines(lines);
-  }
-
-  static void _genText(Generator gen, String text, List<int> bytes) {
-    bytes += gen.text(
-      text,
-      styles: const PosStyles(
+  static PosStyles _style() {
+    return const PosStyles(
         align: PosAlign.center,
         bold: true,
-        height: PosTextSize.size8,
-      ),
-    );
+        height: PosTextSize.size2,
+        width: PosTextSize.size2
+      );
   }
 }
